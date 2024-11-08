@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>WebTransport Echo Example</title>
+  </head>
+  <body>
+    <p>Status: <span id="status">Disconnected</span></p>
+    <p>Transport: <span id="transport">N/A</span></p>
+
+    <script>
+      const $status = document.getElementById("status");
+      const $transport = document.getElementById("transport");
+
+      // WebTransport를 / 경로로 연결
+      const url = 'https://127.0.0.1:3000/';  // 서버 주소와 경로를 맞추기
+      const transport = new WebTransport(url);
+
+      // WebTransport 연결 시 이벤트 리스너 설정
+      transport.ready.then(() => {
+        console.log("WebTransport connected");
+        
+        const datagramReader = transport.datagrams.readable.getReader();
+        const reader = transport.incomingBidirectionalStreams.getReader();
+        
+        (async() => {
+            while (true) {
+            const { done, value } = await reader.read();
+            if (done) { break; }
+
+            console.log("Received stream", {
+                readable: value.readable,
+                writable: value.writable
+            });
+            valueReader = value.readable.getReader();
+            const message = valueReader.read();
+            
+            message.then(promise => {
+                const decoder = new TextDecoder();
+                const data = promise.value;
+
+                //console.log(data);
+                //console.log(decoder.decode(data));
+            });
+            
+            console.log(message);
+        }
+        })();
+      }).catch((err) => {
+        console.error("Error connecting to WebTransport:", err);
+        $status.innerText = "Connection Failed";
+      });
+    </script>
+  </body>
+</html>
